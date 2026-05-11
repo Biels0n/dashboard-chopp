@@ -1194,54 +1194,53 @@ function renderEZ(){
     const horas = Object.keys(horaBuckets).map(Number).filter(h => h >= HC_START && h < HC_END && horaBuckets[h].total >= 3).sort((a,b)=>a-b);
     function fmtH(m){ const min=Math.round(m); return min<60?min+'min':Math.floor(min/60)+'h'+(min%60?String(min%60).padStart(2,'0'):''); }
 
-    // Gerar cards de horário com ordenação dinâmica
-    function buildCards(horasOrdenadas) {
-      return horasOrdenadas.map(h=>{
-        const b = horaBuckets[h];
-        const perdaPct = b.total ? (b.semClass/b.total*100) : 0;
-        const tpiVal   = b.tpiCount ? b.tpiSum/b.tpiCount : null;
-        // Sem Classificação: <30=verde, 30-49=amarelo, >=50=vermelho
-        const cP = perdaPct>=50?'#B82418':perdaPct>=30?'#966A00':'#2E8B4A';
-        // TPI: <25=verde, 25-39=amarelo, >=40=vermelho
-        const cT = tpiVal===null?'#9BA8B0':tpiVal>=40?'#B82418':tpiVal>=25?'#966A00':'#2E8B4A';
-        const tpiStr = tpiVal!==null ? fmtH(tpiVal) : '—';
-        return '<div style="background:rgba(180,165,140,0.06);border-radius:6px;padding:10px 12px;">'
-          +'<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;">'
-          +'<span style="font-family:Barlow,sans-serif;font-size:22px;font-weight:800;color:var(--txt);">'+HORA_LABELS[h]+'</span>'
-          +'<span style="font-family:Barlow,sans-serif;font-size:12px;font-weight:600;color:var(--txt-faint);">'+b.total+' tickets</span>'
-          +'</div>'
-          +'<div style="display:flex;gap:16px;">'
-          +'<div><div style="font-family:Barlow,sans-serif;font-size:9px;letter-spacing:0.8px;color:var(--txt-faint);margin-bottom:2px;">SEM CLASSIF.</div>'
-          +'<div style="font-family:Barlow,sans-serif;font-size:20px;font-weight:700;color:'+cP+';">'+perdaPct.toFixed(0)+'%</div></div>'
-          +'<div><div style="font-family:Barlow,sans-serif;font-size:9px;letter-spacing:0.8px;color:var(--txt-faint);margin-bottom:2px;">TPI MÉDIO</div>'
-          +'<div style="font-family:Barlow,sans-serif;font-size:20px;font-weight:700;color:'+cT+';">'+tpiStr+'</div></div>'
-          +'</div>'
-          +'</div>';
-      }).join('');
-    }
+    const MANHA = [8,9,10,11,12];
+    const TARDE  = [13,14,15,16,17];
 
-    const horasCron    = [...horas];
-    const horasPerda   = [...horas].sort((a,b)=>(horaBuckets[b].semClass/horaBuckets[b].total)-(horaBuckets[a].semClass/horaBuckets[a].total));
-    const horasTPI     = [...horas].filter(h=>horaBuckets[h].tpiCount>0).sort((a,b)=>(horaBuckets[b].tpiSum/horaBuckets[b].tpiCount)-(horaBuckets[a].tpiSum/horaBuckets[a].tpiCount));
+    function buildCard(h) {
+      const b = horaBuckets[h] || {total:0,semClass:0,tpiSum:0,tpiCount:0};
+      if (!b.total) {
+        return '<div style="background:rgba(180,165,140,0.04);border-radius:8px;padding:14px 16px;opacity:0.35;">'
+          +'<div style="font-family:Barlow,sans-serif;font-size:24px;font-weight:800;color:var(--txt-faint);">'+HORA_LABELS[h]+'</div>'
+          +'<div style="font-family:Barlow,sans-serif;font-size:11px;color:var(--txt-faint);margin-top:10px;">—</div>'
+          +'</div>';
+      }
+      const perdaPct = b.semClass/b.total*100;
+      const tpiVal   = b.tpiCount ? b.tpiSum/b.tpiCount : null;
+      const cP = perdaPct>=50?'#B82418':perdaPct>=30?'#966A00':'#2E8B4A';
+      const cT = tpiVal===null?'#9BA8B0':tpiVal>=40?'#B82418':tpiVal>=25?'#966A00':'#2E8B4A';
+      const tpiStr = tpiVal!==null ? fmtH(tpiVal) : '—';
+      return '<div style="background:rgba(180,165,140,0.07);border-radius:8px;padding:14px 16px;">'
+        +'<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;">'
+        +'<span style="font-family:Barlow,sans-serif;font-size:24px;font-weight:800;color:var(--txt);">'+HORA_LABELS[h]+'</span>'
+        +'<span style="font-family:Barlow,sans-serif;font-size:11px;color:var(--txt-faint);">'+b.total+' tickets</span>'
+        +'</div>'
+        +'<div style="display:flex;gap:14px;">'
+        +'<div><div style="font-family:Barlow,sans-serif;font-size:9px;letter-spacing:0.8px;color:var(--txt-faint);margin-bottom:3px;">SEM CLASSIF.</div>'
+        +'<div style="font-family:Barlow,sans-serif;font-size:22px;font-weight:700;color:'+cP+';">'+perdaPct.toFixed(0)+'%</div></div>'
+        +'<div><div style="font-family:Barlow,sans-serif;font-size:9px;letter-spacing:0.8px;color:var(--txt-faint);margin-bottom:3px;">TPI MÉDIO</div>'
+        +'<div style="font-family:Barlow,sans-serif;font-size:22px;font-weight:700;color:'+cT+';">'+tpiStr+'</div></div>'
+        +'</div>'
+        +'</div>';
+    }
 
     const card12HTML = `
     <div class="row" style="grid-template-columns:1fr;">
       <div class="card line-l3" data-s="none" style="height:auto;">
         <div class="card-ab" style="height:auto;padding-bottom:20px;">
-          <div class="c-header" style="flex-wrap:wrap;gap:8px;">
-            <div>
-              <div class="c-title pill-l3">Janelas Críticas de Atendimento</div>
-              <div class="c-sub">Horário comercial 08h–18h · TPI e perda calculados apenas nesse período</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
-              <span style="font-family:Barlow,sans-serif;font-size:10px;color:var(--txt-faint);letter-spacing:0.8px;">Ordenar</span>
-              <button onclick="ez12Sort('cron',this)" class="ez12-btn ez12-active" style="font-family:Barlow,sans-serif;font-size:11px;font-weight:600;padding:4px 10px;border-radius:4px;border:1px solid rgba(180,165,140,0.3);background:rgba(180,165,140,0.1);color:var(--txt-faint);cursor:pointer;letter-spacing:0.5px;">Horário</button>
-              <button onclick="ez12Sort('perda',this)" class="ez12-btn" style="font-family:Barlow,sans-serif;font-size:11px;font-weight:600;padding:4px 10px;border-radius:4px;border:1px solid rgba(180,165,140,0.3);background:rgba(180,165,140,0.1);color:var(--txt-faint);cursor:pointer;letter-spacing:0.5px;">Sem Classificação</button>
-              <button onclick="ez12Sort('tpi',this)" class="ez12-btn" style="font-family:Barlow,sans-serif;font-size:11px;font-weight:600;padding:4px 10px;border-radius:4px;border:1px solid rgba(180,165,140,0.3);background:rgba(180,165,140,0.1);color:var(--txt-faint);cursor:pointer;letter-spacing:0.5px;">Maior TPI</button>
-            </div>
+          <div class="c-header">
+            <div class="c-title pill-l3">Janelas Críticas de Atendimento</div>
+            <div class="c-sub">Horário comercial 08h–17h · TPI e perda calculados apenas nesse período</div>
           </div>
-          <div id="ez12-grid" style="margin-top:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;">
-            ${buildCards(horasCron)}
+          <div style="margin-top:16px;">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:0.8px;color:var(--txt-faint);text-transform:uppercase;margin-bottom:8px;">Manhã · 08h–12h</div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px;">
+              ${MANHA.map(buildCard).join('')}
+            </div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:0.8px;color:var(--txt-faint);text-transform:uppercase;margin-bottom:8px;">Tarde · 13h–17h</div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">
+              ${TARDE.map(buildCard).join('')}
+            </div>
           </div>
         </div>
       </div>
@@ -1249,29 +1248,9 @@ function renderEZ(){
 
     html += card12HTML;
 
-    // Dados para o sort (armazenados globalmente para o onclick funcionar)
-    window._ez12 = { horasCron, horasPerda, horasTPI, buildCards };
   }
 
   document.getElementById('ez-main').innerHTML=html;
-
-  // Função de ordenação do card 1.2
-  window.ez12Sort = function(tipo, btn) {
-    if(!window._ez12) return;
-    const {horasCron, horasPerda, horasTPI, buildCards} = window._ez12;
-    const grid = document.getElementById('ez12-grid');
-    if(!grid) return;
-    const horas = tipo==='perda' ? horasPerda : tipo==='tpi' ? horasTPI : horasCron;
-    grid.innerHTML = buildCards(horas);
-    document.querySelectorAll('.ez12-btn').forEach(b=>{
-      b.style.color='var(--txt-faint)';
-      b.style.borderColor='rgba(180,165,140,0.3)';
-      b.style.background='rgba(180,165,140,0.1)';
-    });
-    btn.style.color='var(--gold,#FFA62C)';
-    btn.style.borderColor='var(--gold,#FFA62C)';
-    btn.style.background='rgba(255,166,44,0.1)';
-  };
 
   // Tooltip para colunas CSAT na tabela — estilo sp-tip
   const ezMain = document.getElementById('ez-main');
