@@ -1117,7 +1117,7 @@ function renderEZ(){
           ${classSort.map(({label,count,pct},i)=>`
             <div style="margin-bottom:16px;">
               <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
-                <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;color:var(--txt);letter-spacing:0.2px;">${label}</span>
+                <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:400;color:var(--txt);letter-spacing:0.2px;">${label}</span>
                 <span style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--txt-faint);white-space:nowrap;margin-left:8px;">${count} &nbsp;·&nbsp; ${Math.round(pct*100)}%</span>
               </div>
               <div style="height:13px;background:rgba(180,165,140,0.10);border-radius:6px;overflow:hidden;">
