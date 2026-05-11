@@ -524,14 +524,20 @@ function calcCSAT(tickets) {
 
 async function loadData() {
   setLoading(true);
+  const errEl=document.getElementById('loading-err');
+  if(errEl)errEl.style.display='none';
   try {
     await Promise.all([
       fetch(SHEETS.SEMANAL).then(r=>r.text()).then(t=>{ SEMANAL_RAW = parseSemanal(t); }),
       fetch(SHEETS.EZ_TICKETS).then(r=>r.text()).then(t=>{ EZ_TICKETS = processEZTickets(parseCSV(t)); }),
       fetch(SHEETS.METAS).then(r=>r.text()).then(t=>{ METAS_RAW = processMetasSheet(parseCSV(t)); }),
     ]);
-  } catch(e) { console.warn('Erro ao carregar dados:', e); }
-  console.log('[EZ_TICKETS]', EZ_TICKETS.length, 'tickets | meses:', [...new Set(EZ_TICKETS.map(d=>d.DataStr.slice(0,7)))]);
+  } catch(e) {
+    setLoading(false);
+    if(errEl)errEl.style.display='flex';
+    return;
+  }
+  agentesPopulados=false;
   setLoading(false);
   go();
 }
@@ -602,7 +608,11 @@ function spark(id,vals,labs,fmtFn,highlightIdx=-1){
   wrap.innerHTML='';
   const W=wrap.offsetWidth||220,H=wrap.offsetHeight||120;
   const pL=8,pR=12,pT=20,pB=20,uW=W-pL-pR,uH=H-pT-pB,n=vals.length;
-  const valid=vals.filter(v=>v>0);if(!valid.length)return;
+  const valid=vals.filter(v=>v>0);
+  if(!valid.length){
+    wrap.innerHTML='<div style="height:100%;display:flex;align-items:center;justify-content:center;font-family:\'Barlow\',sans-serif;font-size:12px;color:#9BA8B0;">Sem dados no período</div>';
+    return;
+  }
   const mn=Math.min(...valid)*0.88,mx=Math.max(...valid)*1.08,rng=mx-mn||1;
   const xs=vals.map((_,i)=>pL+(i/(n-1))*uW);
   const ys=vals.map(v=>pT+uH-((v-mn)/rng)*uH);
@@ -755,7 +765,8 @@ function go(){
     el.style.color = pct >= 0 ? '#1E7A42' : '#B82418';
   }
   setEvo('bz-alc', tAlc, alc.anoAnt);
-  setEvo('bz-at',  tAt,  at.anoAnt); // anoAnt da planilha, tAt do EZ
+  // tAt: contagem EZ (atual). anoAnt: baseline histórico da planilha Semanal (EZ não tem dados do ano anterior)
+  setEvo('bz-at',  tAt,  at.anoAnt);
   setEvo('bz-orc', tOrc, orc.anoAnt);
   setEvo('bz-ped', tPed, ped.anoAnt);
   setEvo('bz-lit', tLit, lit.anoAnt);
@@ -896,9 +907,20 @@ function go(){
 
 /* ── ABA EZ ── */
 let ezRendered=false;
+let agentesPopulados=false;
+function popularAgentes(){
+  if(agentesPopulados)return;
+  agentesPopulados=true;
+  const sel=document.getElementById('f-resp');
+  if(!sel)return;
+  const agentes=[...new Set(EZ_TICKETS.map(t=>t.Agente).filter(Boolean))].sort();
+  const val=sel.value;
+  sel.innerHTML='<option value="">Todos</option>'+agentes.map(a=>'<option'+(a===val?' selected':'')+'>'+a+'</option>').join('');
+}
 function renderEZ(){
   if(ezRendered)return;
   ezRendered=true;
+  popularAgentes();
   const mes  = parseInt(document.getElementById('f-mes')?.value) || (new Date().getMonth()+1);
 
   const sem  = parseInt(document.getElementById('f-sem')?.value) || 0;
@@ -1012,6 +1034,7 @@ function renderEZ(){
       <div class="card-ab" style="height:auto;padding-bottom:16px;">
         <div class="c-header"><div class="c-title pill-l2">Picos de Demanda</div><div class="c-sub">Mapa de calor · dia da semana × hora do dia</div></div>
         <div id="ez-heatmap" style="margin-top:8px;overflow:hidden;"></div>
+        <div id="heatmap-warn" style="margin-top:6px;font-size:11px;color:#9BA8B0;font-family:'Barlow',sans-serif;"></div>
       </div>
     </div>
   </div>
@@ -1174,14 +1197,17 @@ function renderEZ(){
 function buildHeatmapFromTickets(data){
   const DAYS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   const matrix=Array.from({length:7},()=>new Array(24).fill(0));
+  let descartados=0;
   data.forEach(d=>{
     const hora=d.Hora;
-    if(hora<0||hora>23)return;
+    if(hora<0||hora>23){descartados++;return;}
     const dt=new Date(d.DataStr+'T12:00:00');
-    if(isNaN(dt))return;
+    if(isNaN(dt)){descartados++;return;}
     matrix[dt.getDay()][hora]++;
   });
   renderHeatmapMatrix(DAYS,matrix);
+  const warn=document.getElementById('heatmap-warn');
+  if(warn)warn.textContent=descartados>0?'⚠ '+descartados+' registro'+(descartados>1?'s':'')+' ignorado'+(descartados>1?'s':'')+' por data inválida':'';
 }
 
 function renderHeatmapMatrix(DAYS,matrix){

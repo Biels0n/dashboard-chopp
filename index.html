@@ -412,11 +412,6 @@
       <span class="f-lbl">Agente</span>
       <select class="f-sel" id="f-resp" onchange="ezRendered=false;renderEZ()">
         <option value="">Todos</option>
-        <option>Taciana</option>
-        <option>Lídia</option>
-        <option>Raiza</option>
-        <option>Mirian</option>
-        <option>Marciano</option>
       </select>
     </div>
     <button class="btn-f" onclick="go()">FILTRAR</button>
@@ -585,6 +580,11 @@
 <div id="loading-msg" style="display:none;position:fixed;inset:0;background:rgba(26,18,6,0.55);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
   <div style="width:44px;height:44px;border:4px solid rgba(255,255,255,0.2);border-top-color:#E8B840;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
   <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;letter-spacing:2px;color:rgba(255,255,255,0.7);text-transform:uppercase;">Carregando dados...</div>
+</div>
+<div id="loading-err" style="display:none;position:fixed;inset:0;background:rgba(26,18,6,0.75);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+  <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:2px;color:#FFA62C;text-transform:uppercase;">Erro ao carregar dados</div>
+  <div style="font-family:'Barlow',sans-serif;font-size:13px;color:rgba(255,255,255,0.6);">Verifique sua conexão e tente novamente.</div>
+  <button onclick="loadData()" style="margin-top:4px;padding:10px 28px;background:#C92B1E;color:#fff;border:none;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;">Tentar novamente</button>
 </div>
 
 <!-- ABA EZ -->
