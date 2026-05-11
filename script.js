@@ -444,7 +444,7 @@ function renderMetas() {
 
   el.innerHTML = `
   <!-- METAS TEAM -->
-  <div class="row" style="grid-template-columns:repeat(${Math.min(indicadores.length,3)},1fr);">
+  <div class="row" style="grid-template-columns:repeat(${Math.min(indicadores.length,4)},1fr);">
     ${teamHTML}
   </div>
 
@@ -855,8 +855,8 @@ function go(){
         return { s, fv, pv, lv, hasData: pv > 0 || fv > 0 };
       });
       const comDado = allSems.filter(d => d.hasData);
-      // Semana única selecionada com ≤1 semana de dado → esconde sparkline
-      if (sem > 0 && comDado.length <= 1) {
+      // ≤1 semana de dado no período → esconde sparkline
+      if (comDado.length <= 1) {
         spIds.forEach(hideSpark);
       } else {
         spIds.forEach(showSpark);
