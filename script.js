@@ -1113,12 +1113,16 @@ function renderEZ(){
     <div class="card line-l2" data-s="none" style="height:auto;">
       <div class="card-ab" style="height:auto;padding-bottom:16px;">
         <div class="c-header"><div class="c-title pill-l2">Classificação dos Tickets</div><div class="c-sub">Distribuição por tipo de resultado</div></div>
-        <div style="margin-top:10px;width:100%;">
+        <div style="margin-top:14px;width:100%;">
           ${classSort.map(({label,count,pct},i)=>`
-            <div class="ez-bar-row" style="margin-bottom:8px;font-size:13px;">
-              <div class="ez-bar-label" style="font-size:13px;">${label}</div>
-              <div class="ez-bar-track" style="height:8px;"><div class="ez-bar-fill" style="width:${(pct*100).toFixed(1)}%;background:${classColors[i%classColors.length]};height:8px;border-radius:4px;"></div></div>
-              <div class="ez-bar-pct" style="font-size:13px;">${Math.round(pct*100)}%</div>
+            <div style="margin-bottom:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
+                <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;color:var(--txt);letter-spacing:0.2px;">${label}</span>
+                <span style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--txt-faint);white-space:nowrap;margin-left:8px;">${count} &nbsp;·&nbsp; ${Math.round(pct*100)}%</span>
+              </div>
+              <div style="height:13px;background:rgba(180,165,140,0.10);border-radius:6px;overflow:hidden;">
+                <div style="height:100%;width:${(pct*100).toFixed(1)}%;background:${classColors[i%classColors.length]};border-radius:6px;transition:width 0.7s ease;"></div>
+              </div>
             </div>`).join('')}
         </div>
       </div>
