@@ -141,8 +141,8 @@ function sumSemanal(indicador, weeks) {
 }
 
 /* ── PARSER EZ TICKETS ── */
-const EZ_EXCLUIR = ['Mirian','Lídia']; // agentes excluídos de todos os cálculos EZ
-const METAS_EXCLUIR = ['Lídia']; // agentes removidos da aba de metas
+const EZ_EXCLUIR = ['Mirian']; // sempre excluídos (Lídia/Raíza saem por período — sem tickets no período = não aparecem)
+const METAS_EXCLUIR = []; // exclusão por período via meta>0 no sheet
 function processEZTickets(rows) {
   return rows.map(r => {
     const d = r['Data'] || '';
@@ -232,9 +232,18 @@ function renderMetas() {
     mesesAtivos = [mes]; // mês único (ou com semana)
   }
 
+  // Auto-parcial: mês corrente sem semana selecionada → mostra acumulado até semana atual
+  const _hoje = new Date();
+  const mesCorrente = _hoje.getMonth() + 1;
+  const semCorrente = Math.min(4, Math.ceil(_hoje.getDate() / 7));
+  const isCurrentMonth = !triSelM && mesRawM !== 0 && mes === mesCorrente;
+  const effectiveSem = semSel > 0 ? semSel : (isCurrentMonth ? semCorrente : 0);
+
   const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                  'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const semLabel = semSel > 0 && !triSelM && mesRawM !== 0 ? ` · até S${semSel}` : '';
+  const semLabel = effectiveSem > 0 && !triSelM && mesRawM !== 0
+    ? (semSel > 0 ? ` · até S${effectiveSem}` : ` · parcial S1–S${effectiveSem}`)
+    : '';
   const nomeMes = mesRawM === 0 ? 'Ano Completo'
                 : triSelM ? TRI_NOMES[triSelM]
                 : MESES[mes-1] + semLabel;
@@ -257,8 +266,8 @@ function renderMetas() {
   }
 
   // Acumular meta e real de todos os meses ativos
-  // Quando semSel > 0 (e mês único), usa acumulado S1..Ssem como real
-  const useSem = semSel > 0 && !triSelM && mesRawM !== 0;
+  // effectiveSem > 0 → usa acumulado S1..Sem; 0 → usa coluna Real
+  const useSem = effectiveSem > 0 && !triSelM && mesRawM !== 0;
   const semKeys = ['s1','s2','s3','s4'];
   const dadosBase = METAS_RAW.filter(d => mesesAtivos.includes(d.mes));
   const dadosMap = {};
@@ -268,7 +277,7 @@ function renderMetas() {
     dadosMap[key].meta += d.meta;
     if (useSem) {
       let acc = 0;
-      for (let i = 0; i < semSel; i++) acc += (d[semKeys[i]] || 0);
+      for (let i = 0; i < effectiveSem; i++) acc += (d[semKeys[i]] || 0);
       dadosMap[key].real += acc;
     } else {
       dadosMap[key].real += d.real;
