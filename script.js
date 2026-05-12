@@ -1051,6 +1051,24 @@ function renderEZ(){
   const ativo=data.filter(d=>d.Ativo==='ATIVO').length;
   const recep=data.filter(d=>d.Ativo==='RECEPTIVO').length;
 
+  // Comparação com mês anterior (somente quando mês específico selecionado)
+  const MABR=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const prevMes = mes===1 ? 12 : mes-1;
+  const {de:pDe,ate:pAte} = getDateRangeForFilter(prevMes,0);
+  const prevData = ezMesRaw!==0 ? EZ_TICKETS.filter(t=>t.DataStr>=pDe&&t.DataStr<=pAte) : [];
+  const prevTotal = prevData.length;
+  const prevTpi = prevData.reduce((s,d)=>s+(d.TPI_min||0),0)/Math.max(prevTotal,1);
+  const prevTma = prevData.reduce((s,d)=>s+(d.TMA_min||0),0)/Math.max(prevTotal,1);
+  function ezEvo(curr,prev,invertido){
+    if(!prev||ezMesRaw===0)return '';
+    const pct=Math.round((curr-prev)/prev*100);
+    const positivo=invertido?pct<0:pct>0;
+    const cor=positivo?'#2E8B4A':'#B82418';
+    const seta=pct>0?'↑':pct<0?'↓':'→';
+    return '<span style="font-family:\'Barlow Condensed\',sans-serif;font-size:11px;'
+      +'letter-spacing:0.4px;color:'+cor+';">'+seta+' '+Math.abs(pct)+'% vs '+MABR[prevMes]+'</span>';
+  }
+
   // Classificações — 100% de EZ_TICKETS
   const classCount={};
   data.forEach(d=>{ const c=d.Classificacao||'Sem Classificação'; classCount[c]=(classCount[c]||0)+1; });
@@ -1076,7 +1094,7 @@ function renderEZ(){
     return Math.floor(min/60)+'h '+String(min%60).padStart(2,'0')+'min';
   }
 
-  const classColors=['#3D6490','#2E6644','#6B4E10','#8B3A8B','#C8941A','#9BA8B0','#B85C38'];
+  const classColors=['#FFA62C','#E07B18','#C96010','#F5C35A','#D4881A','#B86A0C','#FFBD5A'];
   const totalLabel=total.toLocaleString('pt-BR');
   const bezLabel=ativo+' ativos · '+recep+' receptivos';
   const tpiLabel=fmtMin(tpiMed);
@@ -1098,6 +1116,7 @@ function renderEZ(){
         <div class="c-center"><div class="c-val-block">
           <div class="ez-kpi-val">${totalLabel}</div>
           <span class="bezel neu">${bezLabel}</span>
+          ${ezEvo(total,prevTotal,false)}
         </div></div>
       </div>
     </div>
@@ -1107,6 +1126,7 @@ function renderEZ(){
         <div class="c-center"><div class="c-val-block">
           <div class="ez-kpi-val" style="font-size:38px;">${tpiLabel}</div>
           <span class="bezel neu">tempo de resposta inicial</span>
+          ${ezEvo(tpiMed,prevTpi,true)}
         </div></div>
       </div>
     </div>
@@ -1116,39 +1136,13 @@ function renderEZ(){
         <div class="c-center"><div class="c-val-block">
           <div class="ez-kpi-val" style="font-size:38px;">${tmaLabel}</div>
           <span class="bezel neu">duração média por ticket</span>
+          ${ezEvo(tmaMed,prevTma,true)}
         </div></div>
       </div>
     </div>
   </div>
 
 
-
-  <div class="row" style="grid-template-columns:1fr 1fr;">
-    <div class="card line-l2" data-s="none" style="height:auto;">
-      <div class="card-ab" style="height:auto;padding-bottom:16px;">
-        <div class="c-header"><div class="c-title pill-l2">Classificação dos Tickets</div><div class="c-sub">Distribuição por tipo de resultado</div></div>
-        <div style="margin-top:14px;width:100%;">
-          ${classSort.map(({label,count,pct},i)=>`
-            <div style="margin-bottom:16px;">
-              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
-                <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:400;color:var(--txt);letter-spacing:0.2px;">${label}</span>
-                <span style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--txt-faint);white-space:nowrap;margin-left:8px;">${count} &nbsp;·&nbsp; ${Math.round(pct*100)}%</span>
-              </div>
-              <div style="height:13px;background:rgba(180,165,140,0.10);border-radius:6px;overflow:hidden;">
-                <div style="height:100%;width:${(pct*100).toFixed(1)}%;background:${classColors[i%classColors.length]};border-radius:6px;transition:width 0.7s ease;"></div>
-              </div>
-            </div>`).join('')}
-        </div>
-      </div>
-    </div>
-    <div class="card line-l2" data-s="none" style="height:auto;">
-      <div class="card-ab" style="height:auto;padding-bottom:16px;">
-        <div class="c-header"><div class="c-title pill-l2">Picos de Demanda</div><div class="c-sub">Mapa de calor · dia da semana × hora do dia</div></div>
-        <div id="ez-heatmap" style="margin-top:8px;overflow:hidden;"></div>
-        <div id="heatmap-warn" style="margin-top:6px;font-size:11px;color:#9BA8B0;font-family:'Barlow',sans-serif;"></div>
-      </div>
-    </div>
-  </div>
 
   <div class="row" style="grid-template-columns:1fr;">
     <div class="card line-l3" data-s="none" style="height:auto;">
@@ -1182,6 +1176,33 @@ function renderEZ(){
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row" style="grid-template-columns:1fr 1fr;">
+    <div class="card line-l2" data-s="none" style="height:auto;">
+      <div class="card-ab" style="height:auto;padding-bottom:16px;">
+        <div class="c-header"><div class="c-title pill-l2">Classificação dos Tickets</div><div class="c-sub">Distribuição por tipo de resultado</div></div>
+        <div style="margin-top:14px;width:100%;">
+          ${classSort.map(({label,count,pct},i)=>`
+            <div style="margin-bottom:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
+                <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:400;color:var(--txt);letter-spacing:0.2px;">${label}</span>
+                <span style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--txt-faint);white-space:nowrap;margin-left:8px;">${count} &nbsp;·&nbsp; ${Math.round(pct*100)}%</span>
+              </div>
+              <div style="height:13px;background:rgba(180,165,140,0.10);border-radius:6px;overflow:hidden;">
+                <div style="height:100%;width:${(pct*100).toFixed(1)}%;background:${classColors[i%classColors.length]};border-radius:6px;transition:width 0.7s ease;"></div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="card line-l2" data-s="none" style="height:auto;">
+      <div class="card-ab" style="height:auto;padding-bottom:16px;">
+        <div class="c-header"><div class="c-title pill-l2">Picos de Demanda</div><div class="c-sub">Mapa de calor · dia da semana × hora do dia</div></div>
+        <div id="ez-heatmap" style="margin-top:8px;overflow:hidden;"></div>
+        <div id="heatmap-warn" style="margin-top:6px;font-size:11px;color:#9BA8B0;font-family:'Barlow',sans-serif;"></div>
       </div>
     </div>
   </div>`;
