@@ -142,6 +142,7 @@ function sumSemanal(indicador, weeks) {
 
 /* ── PARSER EZ TICKETS ── */
 const EZ_EXCLUIR = ['Mirian']; // agentes excluídos de todos os cálculos
+const METAS_EXCLUIR = ['Lídia']; // agentes removidos da aba de metas
 function processEZTickets(rows) {
   return rows.map(r => {
     const d = r['Data'] || '';
@@ -260,9 +261,10 @@ function renderMetas() {
   });
   const dados = Object.values(dadosMap);
   const indicadores = [...new Set(dados.map(d => d.indicador))];
-  // Exibir só agentes com pelo menos uma meta > 0 no mês selecionado
+  // Exibir só agentes com pelo menos uma meta > 0 no mês selecionado, exceto demitidos
   const agentes = [...new Set(dados.filter(d => d.agente !== 'Time').map(d => d.agente))]
-    .filter(ag => dados.some(d => d.agente === ag && d.meta > 0));
+    .filter(ag => dados.some(d => d.agente === ag && d.meta > 0))
+    .filter(ag => !METAS_EXCLUIR.includes(ag));
   const timeRow     = (ind) => dados.find(d => d.agente === 'Time' && d.indicador === ind) || {meta:0,real:0};
 
   const SC = {green:'#1E7A42', yellow:'#966A00', red:'#B82418', gray:'#9BA8B0'};
@@ -449,10 +451,8 @@ function renderMetas() {
   </div>
 
   <!-- METAS INDIVIDUAIS + RANKING -->
-  <div class="row" style="grid-template-columns:${agentes.length > 0 ? '2fr 1fr' : '1fr'};">
-    <div style="display:grid;grid-template-columns:repeat(${Math.min(agentes.length,3)},1fr);gap:16px;">
-      ${agentesHTML}
-    </div>
+  <div class="row" style="grid-template-columns:repeat(${agentes.length + 1},1fr);">
+    ${agentesHTML}
     <div class="card line-l3" data-s="none" style="height:auto;">
       <div class="card-ab" style="height:auto;padding-bottom:16px;">
         <div class="c-header">
