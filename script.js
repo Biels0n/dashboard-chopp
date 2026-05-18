@@ -145,11 +145,15 @@ const EZ_EXCLUIR = ['Mirian']; // sempre excluídos (Lídia/Raíza saem por per�
 const METAS_EXCLUIR = []; // exclusão por período via meta>0 no sheet
 function processEZTickets(rows) {
   return rows.map(r => {
-    const d = r['Data'] || '';
+    const d = (r['Data'] || '').trim();
     let dataStr = '';
     if (d) {
-      const [dia, mes, ano] = d.split('/');
-      dataStr = `${ano}-${(mes||'').padStart(2,'0')}-${(dia||'').padStart(2,'0')}`;
+      if (/^\d{4}-\d{2}-\d{2}/.test(d)) {
+        dataStr = d.slice(0, 10); // já é YYYY-MM-DD
+      } else if (/^\d{2}\/\d{2}\/\d{4}/.test(d)) {
+        const [dia, mes, ano] = d.split('/');
+        dataStr = `${ano}-${mes}-${dia}`; // DD/MM/YYYY → YYYY-MM-DD
+      }
     }
     return {
       DataStr: dataStr,
@@ -724,14 +728,21 @@ function go(){
 
   // Acumular semanas: ano completo (mes=0), trimestre, ou normal
   const TRI_MESES = { 1:[1,2,3], 2:[4,5,6], 3:[7,8,9], 4:[10,11,12] };
+  const _h = new Date();
+  const _mesAtual = _h.getMonth() + 1;
+  const _semAtual = Math.min(4, Math.ceil(_h.getDate() / 7));
+  // Auto-parcial: mês corrente sem semana → só semanas que já aconteceram
+  const _autoParcial = !tri && mesRaw !== 0 && sem === 0 && mes === _mesAtual;
   let weeks;
   if (mesRaw === 0) {
-    // Todos os meses do ano
     weeks = [];
     [1,2,3,4,5,6,7,8,9,10,11,12].forEach(m => [1,2,3,4].forEach(s => weeks.push({mes:m, sem:s})));
   } else if (tri && TRI_MESES[tri]) {
     weeks = [];
     TRI_MESES[tri].forEach(m => [1,2,3,4].forEach(s => weeks.push({mes:m, sem:s})));
+  } else if (_autoParcial) {
+    weeks = [];
+    for (let s = 1; s <= _semAtual; s++) weeks.push({mes, sem: s});
   } else {
     weeks = getWeeksForFilter(mes, sem);
   }
