@@ -728,11 +728,6 @@ function go(){
 
   // Acumular semanas: ano completo (mes=0), trimestre, ou normal
   const TRI_MESES = { 1:[1,2,3], 2:[4,5,6], 3:[7,8,9], 4:[10,11,12] };
-  const _h = new Date();
-  const _mesAtual = _h.getMonth() + 1;
-  const _semAtual = Math.min(4, Math.ceil(_h.getDate() / 7));
-  // Auto-parcial: mês corrente sem semana → só semanas que já aconteceram
-  const _autoParcial = !tri && mesRaw !== 0 && sem === 0 && mes === _mesAtual;
   let weeks;
   if (mesRaw === 0) {
     weeks = [];
@@ -740,9 +735,6 @@ function go(){
   } else if (tri && TRI_MESES[tri]) {
     weeks = [];
     TRI_MESES[tri].forEach(m => [1,2,3,4].forEach(s => weeks.push({mes:m, sem:s})));
-  } else if (_autoParcial) {
-    weeks = [];
-    for (let s = 1; s <= _semAtual; s++) weeks.push({mes, sem: s});
   } else {
     weeks = getWeeksForFilter(mes, sem);
   }
@@ -767,7 +759,7 @@ function go(){
     }
     return (!ezDe || d.DataStr >= ezDe) && (!ezAte || d.DataStr <= ezAte);
   }).length;
-  const tAt = ezCount || at.res;  // fallback para planilha se EZ vazio
+  const tAt = at.res || ezCount;  // SEMANAL é fonte primária; EZ só como fallback
   const mrAt=at.meta;
   const tOrc=orc.res,mrO=orc.meta;
   const tPed=ped.res,mrP=ped.meta;
