@@ -1077,6 +1077,7 @@ function renderEZ(){
     if(resp&&d.Agente!==resp)return false;
     return true;
   });
+  console.log('[EZ debug] total tickets:', EZ_TICKETS.length, '| filtrados:', data.length, '| range:', de, '→', ate, '| ex DataStr:', EZ_TICKETS[0]?.DataStr);
 
 
   const total=data.length;
