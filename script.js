@@ -1077,10 +1077,21 @@ function renderEZ(){
     if(resp&&d.Agente!==resp)return false;
     return true;
   });
-  console.log('[EZ debug] total tickets:', EZ_TICKETS.length, '| filtrados:', data.length, '| range:', de, '→', ate, '| ex DataStr:', EZ_TICKETS[0]?.DataStr);
 
-
-  const total=data.length;
+  // Total de Tickets: usa SEMANAL (mesma fonte do card Atendimentos em Vendas)
+  const TRI_MESES_EZ = { 1:[1,2,3], 2:[4,5,6], 3:[7,8,9], 4:[10,11,12] };
+  const triEZ = parseInt(document.getElementById('f-tri')?.value) || 0;
+  let weeksEZ;
+  if (ezMesRaw === 0) {
+    weeksEZ = [];
+    [1,2,3,4,5,6,7,8,9,10,11,12].forEach(m => [1,2,3,4].forEach(s => weeksEZ.push({mes:m,sem:s})));
+  } else if (triEZ && TRI_MESES_EZ[triEZ]) {
+    weeksEZ = [];
+    TRI_MESES_EZ[triEZ].forEach(m => [1,2,3,4].forEach(s => weeksEZ.push({mes:m,sem:s})));
+  } else {
+    weeksEZ = getWeeksForFilter(mes, sem);
+  }
+  const total = sumSemanal('Engajamento / Atendimento', weeksEZ).res || data.length;
   const tpiMed=data.reduce((s,d)=>s+(d.TPI_min||0),0)/Math.max(total,1);
   const tmaMed=data.reduce((s,d)=>s+(d.TMA_min||0),0)/Math.max(total,1);
   const ativo=data.filter(d=>d.Ativo==='ATIVO').length;
